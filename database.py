@@ -17,7 +17,7 @@ class db():
             self.connection = self.connect_to_db()
         i = 1
         for sensor in sensors:
-            self.connection.execute("insert or ignore into MainTable (id,serial,name) values(?,?,?);",(i,sensors.get(i),' واحد '+str(i),))
+            self.connection.execute("insert or ignore into MainTable (id,serial,name) values(?,?,?);",(i,sensor,' vahed '+str(i),))
             self.connection.commit()
             i+=1
 
@@ -32,7 +32,7 @@ class db():
     def updateUptime(self,offset,date):
         if self.connection is None:
             self.connection = self.connect_to_db()
-        self.connection.execute("update UpTime set uptime = uptime"+str(offset)+" where date = ?",(date,))
+        self.connection.execute("update UpTime set uptime = "+str(offset)+" where date like(?) ",(date,))
         self.connection.commit()
     def is_consumption_added(self,date,tag):
         if self.connection is None:
@@ -78,3 +78,19 @@ class db():
                     return row[1]
                 print(row,row[1],type(row))
                 index+=1
+    def reportConsumption(self,date_from,date_to):
+        if self.connection is None:
+            self.connection = self.connect_to_db()
+            print('no connection!')
+        cursor = self.connection.execute("select tag,total_time from Consumption where date between '"+date_from+"'  and '"+date_to+"' ")
+        rows = cursor.fetchall()
+        d = dict()
+        for x,y in rows:
+            if x not in d:
+                #print('key is not in dict adding...' , x)
+                d[x] = y
+            else:
+                #print('key is in dict not adding...' , x)
+                this_time = d[x]
+                d[x] = (y)+int(this_time)
+        return d

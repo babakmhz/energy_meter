@@ -23,6 +23,7 @@ sensor_on_min_threshold = 24.0
 sensor_on_max_threshold = 26.0
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
+sensors_manual_list = ['/sys/bus/w1/devices/28-031397792df5','/sys/bus/w1/devices/28-031197796680','/sys/bus/w1/devices/28-031397792ce7','/sys/bus/w1/devices/28-03129779f466','/sys/bus/w1/devices/28-03129779f35e']
 base_dir = '/sys/bus/w1/devices/'
 device_folder = glob.glob(base_dir + '28*')
 today = datetime.datetime.now().date()
@@ -33,11 +34,15 @@ timer_thread = threading.Thread(target=uptime_counter,args=())
 timer_thread.start()
 index = 1
 for device in device_folder:
-    sensors[index] = device
+    #sensors_manual_list[index] = device
+    if str(device) not in sensors_manual_list:
+        print('ITEM '+device+'not in list')
+        sensors_manual_list.append(device)
     index+=1
-print(sensors)
+print(sensors_manual_list)
 db = db()
-db.insertSensors(sensors)
+db.insertSensors(sensors_manual_list)
+
 def updateUptime(date,uptime):
     db.updateUptime(date,uptime)
 
@@ -81,7 +86,7 @@ def handle_sensor(tag,device_file):
             this_temp = read_temp(this_sensor)[0]
         if consumed:
            db_class = db()
-           db_class.updateConsumeTime(today_id,con_time,tag)
+           db_class.updateConsumeTime(today,con_time,tag)
            db_class.closedb()
            print('uptime updated')
            consumed = False
@@ -90,7 +95,7 @@ def handle_sensor(tag,device_file):
 insert_new_day(today)
 print('global today_id is :',today_id)
 index = 1
-for file in device_folder:
+for file in sensors_manual_list:
     this_thread = threading.Thread(target=handle_sensor,args=(index,file,))
     threads.append(this_thread)
     this_thread.start()
